@@ -9,7 +9,10 @@ dotenv.config();
 
 const app = express();
 app.use(bodyParser.json());
-app.use(cors());
+// Modify CORS to only allow requests from your frontend domain
+app.use(cors({
+  origin: 'https://linaagencyvip.vercel.app/', // Your frontend URL
+}));
 app.use(express.json());
 
 const PORT = 3000;
