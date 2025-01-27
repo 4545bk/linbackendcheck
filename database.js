@@ -1,11 +1,14 @@
 import mysql from 'mysql2/promise';
+import dotenv from 'dotenv';
 
-// Configure MySQL connection
+dotenv.config(); // Load environment variables from .env file
+
+// Configure MySQL connection using environment variables
 const pool = mysql.createPool({
-  host: 'localhost',
-  user: 'chapaintegrate', // Replace with your MySQL username
-  password: 'chapaintegrate', // Replace with your MySQL password
-  database: 'chapaintegrate', // Replace with your MySQL database name
+  host: process.env.DB_HOST, // MySQL host from .env
+  user: process.env.DB_USER, // MySQL username from .env
+  password: process.env.DB_PASSWORD, // MySQL password from .env
+  database: process.env.DB_NAME, // MySQL database name from .env
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
