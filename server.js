@@ -141,7 +141,7 @@ app.get('/', (req, res) => {
 });
 
 // Server start
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
   console.log('Server Date And Time:', new Date().toISOString());
 });
