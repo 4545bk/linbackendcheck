@@ -11,7 +11,7 @@ const app = express();
 app.use(bodyParser.json());
 // Modify CORS to only allow requests from your frontend domain
 app.use(cors({
-  origin: 'https://linaagencyvip.vercel.app/', // Your frontend URL
+  origin: 'https://linaagencyvip.vercel.app', // Your frontend URL
 }));
 app.use(express.json());
 
