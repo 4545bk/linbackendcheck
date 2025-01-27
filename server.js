@@ -1,7 +1,6 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import cors from 'cors';
-import { query } from './database.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
@@ -16,16 +15,21 @@ app.use(cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 8001;
-const CHAPA_AUTH_KEY = process.env.CHAPA_AUTH_KEY; // Replace with your Chapa secret key
+const CHAPA_AUTH_KEY = process.env.CHAPA_AUTH_KEY;
+const JWT_SECRET = process.env.JWT_SECRET;
+const DB_HOST = process.env.DB_HOST;
+const DB_USER = process.env.DB_USER;
+const DB_PASSWORD = process.env.DB_PASSWORD;
+const DB_NAME = process.env.DB_NAME;
 
 // Database setup
 (async function setupDatabase() {
   try {
     const connection = await mysql.createConnection({
-      host: 'localhost', // Replace with your database host
-      user: 'chapaintegrate',      // Replace with your database username
-      password: 'chapaintegrate',      // Replace with your database password
-      database: 'chapaintegrate',
+      host: DB_HOST,
+      user: DB_USER,
+      password: DB_PASSWORD,
+      database: DB_NAME,
     });
 
     const createTableQuery = `
@@ -39,8 +43,8 @@ const CHAPA_AUTH_KEY = process.env.CHAPA_AUTH_KEY; // Replace with your Chapa se
       );
     `;
 
-    await connection.query('CREATE DATABASE IF NOT EXISTS chapaintegrate');
-    await connection.query('USE chapaintegrate');
+    await connection.query(`CREATE DATABASE IF NOT EXISTS ${DB_NAME}`);
+    await connection.query(`USE ${DB_NAME}`);
     await connection.query(createTableQuery);
 
     console.log('Database and users table ensured.');
@@ -55,7 +59,14 @@ app.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const result = await query('SELECT * FROM users WHERE email = ?', [email]);
+    const connection = await mysql.createConnection({
+      host: DB_HOST,
+      user: DB_USER,
+      password: DB_PASSWORD,
+      database: DB_NAME,
+    });
+
+    const [result] = await connection.query('SELECT * FROM users WHERE email = ?', [email]);
     if (result.length === 0) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
@@ -66,10 +77,7 @@ app.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
-    const payload = { userId: user.username };
-    const secret = process.env.JWT_SECRET || 'your-secret-key'; // Replace with a strong secret key
-    const token = jwt.sign(payload, secret, { expiresIn: '1h' });
-
+    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '1h' });
     return res.status(200).json({ message: 'Login successful', token });
   } catch (error) {
     console.error('Error during login:', error.message);
@@ -82,14 +90,20 @@ app.post('/register', async (req, res) => {
   const { email, password, username, role } = req.body;
 
   try {
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const connection = await mysql.createConnection({
+      host: DB_HOST,
+      user: DB_USER,
+      password: DB_PASSWORD,
+      database: DB_NAME,
+    });
 
-    const result = await query(
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const [result] = await connection.query(
       'INSERT INTO users (email, password, username, roles) VALUES (?, ?, ?, ?)',
       [email, hashedPassword, username, role]
     );
 
-    res.status(201).json({ message: 'User created successfully', user: result });
+    res.status(201).json({ message: 'User created successfully', userId: result.insertId });
   } catch (error) {
     console.error('Error creating user:', error.message);
     return res.status(500).json({ message: 'Error creating user' });
@@ -98,15 +112,7 @@ app.post('/register', async (req, res) => {
 
 // Payment route
 app.post('/accept-payment', async (req, res) => {
-  const {
-    amount,
-    currency,
-    email,
-    first_name,
-    last_name,
-    phone_number,
-    tx_ref,
-  } = req.body;
+  const { amount, currency, email, first_name, last_name, phone_number, tx_ref } = req.body;
 
   try {
     const header = {
@@ -116,15 +122,7 @@ app.post('/accept-payment', async (req, res) => {
       },
     };
 
-    const body = {
-      amount,
-      currency,
-      email,
-      first_name,
-      last_name,
-      phone_number,
-      tx_ref,
-     };
+    const body = { amount, currency, email, first_name, last_name, phone_number, tx_ref };
 
     const response = await axios.post(
       'https://api.chapa.co/v1/transaction/initialize',
