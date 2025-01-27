@@ -136,6 +136,9 @@ app.post('/accept-payment', async (req, res) => {
     res.status(400).json({ message: 'Payment initialization failed', error: error.message });
   }
 });
+app.get('/', (req, res) => {
+  res.send('Welcome to the backend!');
+});
 
 // Server start
 app.listen(PORT, () => {
