@@ -14,7 +14,7 @@ app.use(bodyParser.json());
 app.use(cors());
 app.use(express.json());
 
-const PORT = process.env.PORT || 8001;
+const PORT = process.env.PORT || 3000;
 const CHAPA_AUTH_KEY = process.env.CHAPA_AUTH_KEY;
 const JWT_SECRET = process.env.JWT_SECRET;
 const DB_HOST = process.env.DB_HOST;
